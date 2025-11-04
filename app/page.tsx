@@ -21,22 +21,22 @@ interface Document {
 }
 
 interface Citation {
-  document_name: string
-  page_number: number
-  excerpt: string
-  relevance_score: number
+  document_name?: string
+  page_number?: number
+  excerpt?: string
+  relevance_score?: number
 }
 
 interface SearchResponse {
-  answer: string
-  citations: Citation[]
-  documents_referenced: string[]
-  confidence: number
-  follow_up_suggestions: string[]
-  metadata: {
-    search_queries_used: string[]
-    total_passages_retrieved: number
-    processing_time: string
+  answer?: string
+  citations?: Citation[]
+  documents_referenced?: string[]
+  confidence?: number
+  follow_up_suggestions?: string[]
+  metadata?: {
+    search_queries_used?: string[]
+    total_passages_retrieved?: number
+    processing_time?: string
   }
 }
 
@@ -148,23 +148,31 @@ export default function HomePage() {
 
       const data = await response.json()
 
-      let agentResponse: SearchResponse
+      let agentResponse: SearchResponse = {
+        answer: 'No documents found matching your query. Please upload documents to get started.',
+        citations: [],
+        documents_referenced: [],
+        confidence: 0,
+        follow_up_suggestions: [],
+        metadata: {
+          search_queries_used: [],
+          total_passages_retrieved: 0,
+          processing_time: '0s',
+        },
+      }
+
       if (data.success && data.response) {
-        agentResponse = typeof data.response === 'string'
+        const parsedResponse = typeof data.response === 'string'
           ? JSON.parse(data.response)
           : data.response
-      } else {
+
         agentResponse = {
-          answer: 'No documents found matching your query. Please upload documents to get started.',
-          citations: [],
-          documents_referenced: [],
-          confidence: 0,
-          follow_up_suggestions: [],
-          metadata: {
-            search_queries_used: [],
-            total_passages_retrieved: 0,
-            processing_time: '0s',
-          },
+          answer: parsedResponse.answer ?? agentResponse.answer,
+          citations: parsedResponse.citations ?? agentResponse.citations,
+          documents_referenced: parsedResponse.documents_referenced ?? agentResponse.documents_referenced,
+          confidence: parsedResponse.confidence ?? agentResponse.confidence,
+          follow_up_suggestions: parsedResponse.follow_up_suggestions ?? agentResponse.follow_up_suggestions,
+          metadata: parsedResponse.metadata ?? agentResponse.metadata,
         }
       }
 
@@ -347,7 +355,7 @@ export default function HomePage() {
 
                         {message.response && (
                           <div className="space-y-4">
-                            {message.response.citations.length > 0 && (
+                            {message.response.citations && message.response.citations.length > 0 && (
                               <div>
                                 <p className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Sources</p>
                                 <div className="flex flex-wrap gap-2">
@@ -366,24 +374,24 @@ export default function HomePage() {
                               </div>
                             )}
 
-                            <Separator />
+                            {message.response.citations && message.response.citations.length > 0 && <Separator />}
 
                             <div className="grid grid-cols-3 gap-4 text-center text-xs">
                               <div>
-                                <p className="font-semibold text-gray-900">{Math.round(message.response.confidence * 100)}%</p>
+                                <p className="font-semibold text-gray-900">{Math.round((message.response.confidence ?? 0) * 100)}%</p>
                                 <p className="text-gray-500">Confidence</p>
                               </div>
                               <div>
-                                <p className="font-semibold text-gray-900">{message.response.documents_referenced.length}</p>
+                                <p className="font-semibold text-gray-900">{message.response.documents_referenced?.length ?? 0}</p>
                                 <p className="text-gray-500">Documents</p>
                               </div>
                               <div>
-                                <p className="font-semibold text-gray-900">{message.response.metadata.total_passages_retrieved}</p>
+                                <p className="font-semibold text-gray-900">{message.response.metadata?.total_passages_retrieved ?? 0}</p>
                                 <p className="text-gray-500">Passages</p>
                               </div>
                             </div>
 
-                            {message.response.follow_up_suggestions.length > 0 && (
+                            {message.response.follow_up_suggestions && message.response.follow_up_suggestions.length > 0 && (
                               <div>
                                 <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Follow-up Questions</p>
                                 <div className="space-y-2">
@@ -400,7 +408,7 @@ export default function HomePage() {
                               </div>
                             )}
 
-                            <p className="text-xs text-gray-500 mt-4">Processed in {message.response.metadata.processing_time}</p>
+                            <p className="text-xs text-gray-500 mt-4">Processed in {message.response.metadata?.processing_time ?? '0s'}</p>
                           </div>
                         )}
                       </CardContent>
